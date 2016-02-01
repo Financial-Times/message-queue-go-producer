@@ -1,5 +1,10 @@
 #Kafka Proxy producer library
 
+[![GoDoc](https://godoc.org/github.com/Financial-Times/message-queue-go-producer/producer?status.svg)](https://godoc.org/github.com/Financial-Times/message-queue-go-producer/producer)
+
+[![Circle CI](https://circleci.com/gh/Financial-Times/message-queue-go-producer.svg?style=shield)](https://circleci.com/gh/Financial-Times/message-queue-go-producer/tree/master)
+
+
 Responsible for writing messages to kafka, through the kafka proxy
 
 Go implementation of https://github.com/Financial-Times/message-queue-producer library
@@ -7,6 +12,7 @@ Go implementation of https://github.com/Financial-Times/message-queue-producer l
 ###Usage
 
 `go get github.com/Financial-Times/message-queue-go-producer/producer`
+
 `import github.com/Financial-Times/message-queue-go-producer/producer`
 
 The Api allows two ways of writing in kafka:
@@ -16,7 +22,7 @@ The Api allows two ways of writing in kafka:
 
 Creating a producer is based on a producer configuration. The client should create a producer instance, based on config settings.
 
-```
+```go
 conf := queueProducer.MessageProducerConfig{
   Addr: "<producerHost>",
   Topic: "<topic>",
@@ -25,12 +31,12 @@ conf := queueProducer.MessageProducerConfig{
 
 producerInstance = queueProducer.NewMessageProducer(producerConfig)
 producerInstance.SendMessage(uuid, queueProducer.Message{Headers: msg.Headers, Body: msg.Body})
-
-    or: producerInstance.SendMessage(uuid, rawMessage)
+or: producerInstance.SendMessage(uuid, rawMessage)
 
 ```
 
 ###Build
 
 `go build ./producer`
+
 `go test ./producer`
