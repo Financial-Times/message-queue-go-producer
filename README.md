@@ -32,7 +32,6 @@ conf := queueProducer.MessageProducerConfig{
 
 producerInstance = queueProducer.NewMessageProducer(producerConfig)
 producerInstance.SendMessage(uuid, queueProducer.Message{Headers: msg.Headers, Body: msg.Body})
-or: producerInstance.SendMessage(uuid, rawMessage)
 
 ```
 

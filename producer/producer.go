@@ -15,7 +15,6 @@ const CONTENT_TYPE_HEADER = "application/vnd.kafka.binary.v1+json"
 
 //Interface for message producer - which writes to kafka through the proxy
 type MessageProducer interface {
-	SendRawMessage(string, string) error
 	SendMessage(string, Message) error
 }
 
