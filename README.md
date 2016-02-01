@@ -1,6 +1,8 @@
-###Kafka Proxy producer library: responsible for writing messages to kafka, through the kafka proxy
+#Kafka Proxy producer library
 
-Go implementation:
+Responsible for writing messages to kafka, through the kafka proxy
+
+Go implementation of https://github.com/Financial-Times/message-queue-producer library
 
 ###Usage
 
@@ -27,3 +29,8 @@ producerInstance.SendMessage(uuid, queueProducer.Message{Headers: msg.Headers, B
     or: producerInstance.SendMessage(uuid, rawMessage)
 
 ```
+
+###Build
+
+`go build ./producer`
+`go test ./producer`

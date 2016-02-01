@@ -1,14 +1,14 @@
 package producer
 
 import (
-	"encoding/json"
 	"encoding/base64"
-	"log"
-	"net/http"
-	"strings"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
 	"sort"
+	"strings"
 )
 
 const CONTENT_TYPE_HEADER = "application/vnd.kafka.binary.v1+json"
@@ -95,7 +95,7 @@ func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (er
 
 func constructRequest(addr string, topic string, queue string, message string) (*http.Request, error) {
 
-	req, err := http.NewRequest("POST", addr + "/topics/" + topic, strings.NewReader(message))
+	req, err := http.NewRequest("POST", addr+"/topics/"+topic, strings.NewReader(message))
 	if err != nil {
 		log.Printf("ERROR - creating request: %s", err.Error())
 		return req, err
@@ -107,7 +107,7 @@ func constructRequest(addr string, topic string, queue string, message string) (
 	return req, err
 }
 
-func buildMessage(message Message) (string) {
+func buildMessage(message Message) string {
 
 	builtMessage := "FTMSG/1.0\n"
 
@@ -140,8 +140,8 @@ func envelopeMessage(key string, message string) (string, error) {
 	key64 := base64.StdEncoding.EncodeToString([]byte(key))
 	message64 := base64.StdEncoding.EncodeToString([]byte(message))
 
-	record := MessageRecord{Key:key64, Value:message64}
-	msgWithRecords := &MessageWithRecords{Records:[]MessageRecord{record}}
+	record := MessageRecord{Key: key64, Value: message64}
+	msgWithRecords := &MessageWithRecords{Records: []MessageRecord{record}}
 
 	jsonRecords, err := json.Marshal(msgWithRecords)
 

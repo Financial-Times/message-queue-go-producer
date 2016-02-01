@@ -1,10 +1,10 @@
 package producer
 
 import (
-	"io"
-	"testing"
 	"errors"
 	"github.com/golang/go/src/pkg/io/ioutil"
+	"io"
+	"testing"
 )
 
 func TestBuildMessage(t *testing.T) {
@@ -132,7 +132,7 @@ func TestConstructRequest(t *testing.T) {
 		} else if request.Header.Get("Content-Type") != CONTENT_TYPE_HEADER {
 			t.Errorf("Expected: Content-Type: %v\nActual: Content-Type: %v.",
 				CONTENT_TYPE_HEADER, request.Header.Get("Content-Type"))
-		} else if (err != test.expectedError && err.Error() != test.expectedError.Error()) {
+		} else if err != test.expectedError && err.Error() != test.expectedError.Error() {
 			t.Errorf("Expected: error: %v\nActual: error: %v.",
 				test.expectedError, err)
 		}
