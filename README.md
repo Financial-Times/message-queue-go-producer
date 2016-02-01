@@ -27,6 +27,7 @@ conf := queueProducer.MessageProducerConfig{
   Addr: "<producerHost>",
   Topic: "<topic>",
   Queue: "<required in co-co - producerHostHeader>",
+  Authorization: "<setting vulcand authorization header in coco>",
 }
 
 producerInstance = queueProducer.NewMessageProducer(producerConfig)

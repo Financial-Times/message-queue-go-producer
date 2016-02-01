@@ -31,7 +31,8 @@ type MessageProducerConfig struct {
 	Topic string `json:"topic"`
 	//the name of the queue
 	//leave it empty for requests to UCS kafka-proxy
-	Queue string `json:"queue"`
+	Queue         string `json:"queue"`
+	Authorization string `json:"authorization"`
 }
 
 //Message is the higher-level representation of messages from the queue: containing headers and message body
@@ -72,7 +73,7 @@ func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (er
 	}
 
 	//create request
-	req, err := constructRequest(p.config.Addr, p.config.Topic, p.config.Queue, envelopedMessage)
+	req, err := constructRequest(p.config.Addr, p.config.Topic, p.config.Queue, p.config.Authorization, envelopedMessage)
 
 	//make request
 	resp, err := p.client.Do(req)
@@ -93,7 +94,7 @@ func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (er
 	return nil
 }
 
-func constructRequest(addr string, topic string, queue string, message string) (*http.Request, error) {
+func constructRequest(addr string, topic string, queue string, authorizationKey string, message string) (*http.Request, error) {
 
 	req, err := http.NewRequest("POST", addr+"/topics/"+topic, strings.NewReader(message))
 	if err != nil {
@@ -103,7 +104,14 @@ func constructRequest(addr string, topic string, queue string, message string) (
 
 	//set content-type header to json, and host header according to vulcand routing strategy
 	req.Header.Add("Content-Type", CONTENT_TYPE_HEADER)
-	req.Host = queue
+	if len(queue) > 0 {
+		req.Host = queue
+	}
+
+	if len(authorizationKey) > 0 {
+		req.Header.Add("Authorization", authorizationKey)
+	}
+
 	return req, err
 }
 
