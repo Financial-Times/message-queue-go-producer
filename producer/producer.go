@@ -12,6 +12,7 @@ import (
 )
 
 const CONTENT_TYPE_HEADER = "application/vnd.kafka.binary.v1+json"
+const CRLF = "\r\n"
 
 //Interface for message producer - which writes to kafka through the proxy
 type MessageProducer interface {
@@ -26,8 +27,8 @@ type DefaultMessageProducer struct {
 //Configuration for message producer
 type MessageProducerConfig struct {
 	//proxy address
-	Addr  string `json:"address"`
-	Topic string `json:"topic"`
+	Addr          string `json:"address"`
+	Topic         string `json:"topic"`
 	//the name of the queue
 	//leave it empty for requests to UCS kafka-proxy
 	Queue         string `json:"queue"`
@@ -95,7 +96,7 @@ func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (er
 
 func constructRequest(addr string, topic string, queue string, authorizationKey string, message string) (*http.Request, error) {
 
-	req, err := http.NewRequest("POST", addr+"/topics/"+topic, strings.NewReader(message))
+	req, err := http.NewRequest("POST", addr + "/topics/" + topic, strings.NewReader(message))
 	if err != nil {
 		log.Printf("ERROR - creating request: %s", err.Error())
 		return req, err
@@ -116,7 +117,7 @@ func constructRequest(addr string, topic string, queue string, authorizationKey 
 
 func buildMessage(message Message) string {
 
-	builtMessage := "FTMSG/1.0\n"
+	builtMessage := "FTMSG/1.0" + CRLF
 
 	var keys []string
 
@@ -128,10 +129,10 @@ func buildMessage(message Message) string {
 
 	//set headers
 	for _, key := range keys {
-		builtMessage = builtMessage + key + ": " + message.Headers[key] + "\n"
+		builtMessage = builtMessage + key + ": " + message.Headers[key] + CRLF
 	}
 
-	builtMessage = builtMessage + "\n" + message.Body
+	builtMessage = builtMessage + CRLF + message.Body
 
 	return builtMessage
 

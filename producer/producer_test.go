@@ -5,6 +5,7 @@ import (
 	"github.com/golang/go/src/pkg/io/ioutil"
 	"io"
 	"testing"
+	"strings"
 )
 
 func TestBuildMessage(t *testing.T) {
@@ -22,8 +23,7 @@ func TestBuildMessage(t *testing.T) {
 					"Origin-System-Id":  "http://cmdb.ft.com/systems/methode-web-pub",
 					"X-Request-Id":      "SYNTHETIC-REQ-MON_A391MMaVMv",
 				},
-				`{"contentUri":"http://methode-image-model-transformer-pr-uk-int.svc.ft.com/image/model/c94a3a57-3c99-423c-a6bd-ed8c4c10a3c3",
-"uuid":"c94a3a57-3c99-423c-a6bd-ed8c4c10a3c3", "destination":"methode-image-model-transformer", "relativeUrl":"/image/model/c94a3a57-3c99-423c-a6bd-ed8c4c10a3c3"}`,
+				`{"contentUri":"http://methode-image-model-transformer-pr-uk-int.svc.ft.com/image/model/c94a3a57-3c99-423c-a6bd-ed8c4c10a3c3", "uuid":"c94a3a57-3c99-423c-a6bd-ed8c4c10a3c3", "destination":"methode-image-model-transformer", "relativeUrl":"/image/model/c94a3a57-3c99-423c-a6bd-ed8c4c10a3c3"}`,
 			},
 			`FTMSG/1.0
 Content-Type: application/json
@@ -33,14 +33,13 @@ Message-Type: cms-content-published
 Origin-System-Id: http://cmdb.ft.com/systems/methode-web-pub
 X-Request-Id: SYNTHETIC-REQ-MON_A391MMaVMv
 
-{"contentUri":"http://methode-image-model-transformer-pr-uk-int.svc.ft.com/image/model/c94a3a57-3c99-423c-a6bd-ed8c4c10a3c3",
-"uuid":"c94a3a57-3c99-423c-a6bd-ed8c4c10a3c3", "destination":"methode-image-model-transformer", "relativeUrl":"/image/model/c94a3a57-3c99-423c-a6bd-ed8c4c10a3c3"}`,
+{"contentUri":"http://methode-image-model-transformer-pr-uk-int.svc.ft.com/image/model/c94a3a57-3c99-423c-a6bd-ed8c4c10a3c3", "uuid":"c94a3a57-3c99-423c-a6bd-ed8c4c10a3c3", "destination":"methode-image-model-transformer", "relativeUrl":"/image/model/c94a3a57-3c99-423c-a6bd-ed8c4c10a3c3"}`,
 		},
 	}
 
 	for _, test := range tests {
 		resultingMessage := buildMessage(test.message)
-		if resultingMessage != test.builtMessage {
+		if resultingMessage!=strings.Replace(test.builtMessage, "\n", CRLF, len(test.builtMessage)) {
 			t.Errorf("Expected: msgs: %v\nActual: msgs: %v.",
 				test.builtMessage, resultingMessage)
 		}
