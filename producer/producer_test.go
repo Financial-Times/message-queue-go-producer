@@ -2,8 +2,8 @@ package producer
 
 import (
 	"errors"
-	"github.com/golang/go/src/pkg/io/ioutil"
 	"io"
+	"io/ioutil"
 	"strings"
 	"testing"
 )
