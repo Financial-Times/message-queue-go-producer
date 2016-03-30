@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"sort"
@@ -81,7 +83,10 @@ func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (er
 		log.Printf("ERROR - executing request: %s", err.Error())
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		io.Copy(ioutil.Discard, resp.Body)
+		resp.Body.Close()
+	}()
 
 	//send - verify response status
 	//log if error happens
