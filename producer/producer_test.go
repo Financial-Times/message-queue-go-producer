@@ -4,8 +4,8 @@ import (
 	"errors"
 	"github.com/golang/go/src/pkg/io/ioutil"
 	"io"
-	"testing"
 	"strings"
+	"testing"
 )
 
 func TestBuildMessage(t *testing.T) {
@@ -39,7 +39,7 @@ X-Request-Id: SYNTHETIC-REQ-MON_A391MMaVMv
 
 	for _, test := range tests {
 		resultingMessage := buildMessage(test.message)
-		if resultingMessage!=strings.Replace(test.builtMessage, "\n", CRLF, len(test.builtMessage)) {
+		if resultingMessage != strings.Replace(test.builtMessage, "\n", CRLF, len(test.builtMessage)) {
 			t.Errorf("Expected: msgs: %v\nActual: msgs: %v.",
 				test.builtMessage, resultingMessage)
 		}

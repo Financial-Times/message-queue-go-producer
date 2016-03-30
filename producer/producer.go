@@ -27,8 +27,8 @@ type DefaultMessageProducer struct {
 //Configuration for message producer
 type MessageProducerConfig struct {
 	//proxy address
-	Addr          string `json:"address"`
-	Topic         string `json:"topic"`
+	Addr  string `json:"address"`
+	Topic string `json:"topic"`
 	//the name of the queue
 	//leave it empty for requests to UCS kafka-proxy
 	Queue         string `json:"queue"`
@@ -96,7 +96,7 @@ func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (er
 
 func constructRequest(addr string, topic string, queue string, authorizationKey string, message string) (*http.Request, error) {
 
-	req, err := http.NewRequest("POST", addr + "/topics/" + topic, strings.NewReader(message))
+	req, err := http.NewRequest("POST", addr+"/topics/"+topic, strings.NewReader(message))
 	if err != nil {
 		log.Printf("ERROR - creating request: %s", err.Error())
 		return req, err
