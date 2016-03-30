@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 )
 
 const CONTENT_TYPE_HEADER = "application/vnd.kafka.binary.v1+json"
@@ -56,7 +57,16 @@ type MessageRecord struct {
 
 // NewMessageProducer returns a producer instance
 func NewMessageProducer(config MessageProducerConfig) MessageProducer {
-	return &DefaultMessageProducer{config, &http.Client{}}
+	return NewMessageProducerWithHTTPClient(config, &http.Client{
+		Timeout: 60 * time.Second,
+		Transport: &http.Transport{
+			MaxIdleConnsPerHost: 100,
+		}})
+}
+
+// NewMessageProducerWithHTTPClient returns a producer instance with specified http client instance
+func NewMessageProducerWithHTTPClient(config MessageProducerConfig, httpClient *http.Client) MessageProducer {
+	return &DefaultMessageProducer{config, httpClient}
 }
 
 func (p *DefaultMessageProducer) SendMessage(uuid string, message Message) (err error) {
