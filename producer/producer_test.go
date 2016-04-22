@@ -1,7 +1,6 @@
 package producer
 
 import (
-	"errors"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -62,8 +61,8 @@ func TestEnvelopeMessage(t *testing.T) {
 		{
 			"",
 			"a simple test message",
-			"",
-			errors.New("Key cannot be empty. Please provide a valid UUID!"),
+			"{\"records\":[{\"key\":\"\",\"value\":\"YSBzaW1wbGUgdGVzdCBtZXNzYWdl\"}]}",
+			nil,
 		},
 		{
 			"3d91a94c-6ce6-4ec9-a16b-8b89be574ecc",

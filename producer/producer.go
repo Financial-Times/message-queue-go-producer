@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -90,8 +89,8 @@ func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (er
 	//make request
 	resp, err := p.client.Do(req)
 	if err != nil {
-		log.Printf("ERROR - executing request: %s", err.Error())
-		return
+		errMsg := fmt.Sprintf("ERROR - executing request: %s", err.Error())
+		return errors.New(errMsg)
 	}
 	defer func() {
 		io.Copy(ioutil.Discard, resp.Body)
@@ -101,9 +100,8 @@ func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (er
 	//send - verify response status
 	//log if error happens
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Unexpected response status %d. Expected: %d.", resp.StatusCode, http.StatusOK)
-		log.Printf("ERROR - %s %s", err.Error(), resp.Request.URL.String())
-		return err
+		errMsg := fmt.Sprintf("ERROR - Unexpected response status %d. Expected: %d. %s", resp.StatusCode, http.StatusOK, resp.Request.URL.String())
+		return errors.New(errMsg)
 	}
 
 	return nil
@@ -113,8 +111,8 @@ func constructRequest(addr string, topic string, queue string, authorizationKey 
 
 	req, err := http.NewRequest("POST", addr+"/topics/"+topic, strings.NewReader(message))
 	if err != nil {
-		log.Printf("ERROR - creating request: %s", err.Error())
-		return req, err
+		errMsg := fmt.Sprintf("ERROR - creating request: %s", err.Error())
+		return req, errors.New(errMsg)
 	}
 
 	//set content-type header to json, and host header according to vulcand routing strategy
@@ -155,12 +153,11 @@ func buildMessage(message Message) string {
 
 func envelopeMessage(key string, message string) (string, error) {
 
-	if key == "" {
-		log.Printf("Key cannot be empty. Please provide a valid UUID!")
-		return "", errors.New("Key cannot be empty. Please provide a valid UUID!")
+	var key64 string
+	if key != "" {
+		key64 = base64.StdEncoding.EncodeToString([]byte(key))
 	}
 
-	key64 := base64.StdEncoding.EncodeToString([]byte(key))
 	message64 := base64.StdEncoding.EncodeToString([]byte(message))
 
 	record := MessageRecord{Key: key64, Value: message64}
@@ -169,8 +166,8 @@ func envelopeMessage(key string, message string) (string, error) {
 	jsonRecords, err := json.Marshal(msgWithRecords)
 
 	if err != nil {
-		log.Printf("ERROR - marshalling in json: %s", err.Error())
-		return "", err
+		errMsg := fmt.Sprintf("ERROR - marshalling in json: %s", err.Error())
+		return "", errors.New(errMsg)
 	}
 
 	return string(jsonRecords), err
