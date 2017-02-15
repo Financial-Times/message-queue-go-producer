@@ -13,21 +13,22 @@ import (
 	"time"
 )
 
-const CONTENT_TYPE_HEADER = "application/vnd.kafka.binary.v1+json"
-const CRLF = "\r\n"
+const contentTypeHeader = "application/vnd.kafka.binary.v1+json"
+const crlf = "\r\n"
 
-//Interface for message producer - which writes to kafka through the proxy
+// MessageProducer defines the interface for message producer - which writes to kafka through the proxy
 type MessageProducer interface {
 	SendMessage(string, Message) error
 	ConnectivityCheck() (string, error)
 }
 
+// DefaultMessageProducer defines default implementation of a message producer
 type DefaultMessageProducer struct {
 	config MessageProducerConfig
 	client *http.Client
 }
 
-//Configuration for message producer
+// MessageProducerConfig specifies the configuration for message producer
 type MessageProducerConfig struct {
 	//proxy address
 	Addr  string `json:"address"`
@@ -38,18 +39,18 @@ type MessageProducerConfig struct {
 	Authorization string `json:"authorization"`
 }
 
-//Message is the higher-level representation of messages from the queue: containing headers and message body
+// Message is the higher-level representation of messages from the queue: containing headers and message body
 type Message struct {
 	Headers map[string]string
 	Body    string
 }
 
-//Message format required by Kafka-Proxy containing all the Messages
+// MessageWithRecords is a message format required by Kafka-Proxy containing all the Messages
 type MessageWithRecords struct {
 	Records []MessageRecord `json:"records"`
 }
 
-//Message format required by Kafka-Proxy
+// MessageRecord is a Message format required by Kafka-Proxy
 type MessageRecord struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
@@ -69,6 +70,7 @@ func NewMessageProducerWithHTTPClient(config MessageProducerConfig, httpClient *
 	return &DefaultMessageProducer{config, httpClient}
 }
 
+// SendMessage is the producer method that takes care of sending a message on the queue
 func (p *DefaultMessageProducer) SendMessage(uuid string, message Message) (err error) {
 
 	//concatenate message headers with message body to form a proper message string to save
@@ -76,6 +78,7 @@ func (p *DefaultMessageProducer) SendMessage(uuid string, message Message) (err 
 	return p.SendRawMessage(uuid, messageString)
 }
 
+// SendRawMessage is the producer method that takes care of sending a raw message on the queue
 func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (err error) {
 
 	//encode in base64 and envelope the message
@@ -117,7 +120,7 @@ func constructRequest(addr string, topic string, queue string, authorizationKey 
 	}
 
 	//set content-type header to json, and host header according to vulcand routing strategy
-	req.Header.Add("Content-Type", CONTENT_TYPE_HEADER)
+	req.Header.Add("Content-Type", contentTypeHeader)
 	if len(queue) > 0 {
 		req.Host = queue
 	}
@@ -131,7 +134,7 @@ func constructRequest(addr string, topic string, queue string, authorizationKey 
 
 func buildMessage(message Message) string {
 
-	builtMessage := "FTMSG/1.0" + CRLF
+	builtMessage := "FTMSG/1.0" + crlf
 
 	var keys []string
 
@@ -143,10 +146,10 @@ func buildMessage(message Message) string {
 
 	//set headers
 	for _, key := range keys {
-		builtMessage = builtMessage + key + ": " + message.Headers[key] + CRLF
+		builtMessage = builtMessage + key + ": " + message.Headers[key] + crlf
 	}
 
-	builtMessage = builtMessage + CRLF + message.Body
+	builtMessage = builtMessage + crlf + message.Body
 
 	return builtMessage
 
