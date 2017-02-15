@@ -19,6 +19,7 @@ const CRLF = "\r\n"
 //Interface for message producer - which writes to kafka through the proxy
 type MessageProducer interface {
 	SendMessage(string, Message) error
+	ConnectivityCheck() (string, error)
 }
 
 type DefaultMessageProducer struct {
@@ -171,4 +172,59 @@ func envelopeMessage(key string, message string) (string, error) {
 	}
 
 	return string(jsonRecords), err
+}
+
+// ConnectivityCheck verifies if the kakfa proxy is availabe
+func (p *DefaultMessageProducer) ConnectivityCheck() (string, error) {
+	err := p.checkMessageQueueProxyReachable()
+	if err == nil {
+		return "Connectivity to producer proxy is OK.", nil
+	}
+	return "Error connecting to producer proxy", err
+}
+
+func (p *DefaultMessageProducer) checkMessageQueueProxyReachable() error {
+	req, err := http.NewRequest("GET", p.config.Addr+"/topics", nil)
+	if err != nil {
+		return fmt.Errorf("Could not connect to proxy: %v", err.Error())
+	}
+
+	if len(p.config.Authorization) > 0 {
+		req.Header.Add("Authorization", p.config.Authorization)
+	}
+
+	if len(p.config.Queue) > 0 {
+		req.Host = p.config.Queue
+	}
+
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Could not connect to proxy: %v", err.Error())
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		errMsg := fmt.Sprintf("Producer proxy returned status: %d", resp.StatusCode)
+		return errors.New(errMsg)
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	return checkIfTopicIsPresent(body, p.config.Topic)
+}
+
+func checkIfTopicIsPresent(body []byte, searchedTopic string) error {
+	var topics []string
+
+	err := json.Unmarshal(body, &topics)
+	if err != nil {
+		return fmt.Errorf("Error occurred and topic could not be found. %v", err.Error())
+	}
+
+	for _, topic := range topics {
+		if topic == searchedTopic {
+			return nil
+		}
+	}
+
+	return errors.New("Topic was not found")
 }
