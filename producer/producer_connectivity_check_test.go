@@ -71,6 +71,6 @@ func TestConnectivityCheckNoKafkaProxy(t *testing.T) {
 	p := NewMessageProducer(producerConfigMock)
 	msg, err := p.ConnectivityCheck()
 
-	assert.EqualError(t, err, "Could not connect to proxy: Get http://a-porxy-that-does-not-exist.com/topics: dial tcp: lookup a-porxy-that-does-not-exist.com: no such host", "It should return an error")
+	assert.Error(t, err, "It should return an error")
 	assert.Equal(t, "Error connecting to producer proxy", msg, `The check message should be "Error connecting to consumer proxy"`)
 }
