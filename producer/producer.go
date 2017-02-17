@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -183,6 +184,7 @@ func (p *DefaultMessageProducer) ConnectivityCheck() (string, error) {
 	if err == nil {
 		return "Connectivity to producer proxy is OK.", nil
 	}
+	log.Printf("ERROR - Producer Connectivity Check - %s", err)
 	return "Error connecting to producer proxy", err
 }
 
