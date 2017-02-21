@@ -17,7 +17,17 @@ import (
 const contentTypeHeader = "application/vnd.kafka.binary.v1+json"
 const crlf = "\r\n"
 
-// MessageProducer defines the interface for message producer - which writes to kafka through the proxy
+// MessageProducer defines the interface for message producer - which writes
+// to kafka through the proxy
+//
+// SendMessage implements the logic to sending a Message to a queue.
+// The input string should be the UUID that identifies the message.
+// An error should be returned in case of failure in sending a message.
+//
+// ConnectivityCheck implements the logic to check the current
+// connectivity to the queue.
+// The method should return a message about the status of the connection and
+// an error in case of connectivity failure.
 type MessageProducer interface {
 	SendMessage(string, Message) error
 	ConnectivityCheck() (string, error)
@@ -231,5 +241,5 @@ func checkIfTopicIsPresent(body []byte, searchedTopic string) error {
 		}
 	}
 
-	return errors.New("Topic was not found")
+	return fmt.Errorf(`Topic "%v" was not found`, searchedTopic)
 }

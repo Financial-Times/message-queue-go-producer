@@ -61,7 +61,7 @@ func TestConnectivityCheckMissingTopic(t *testing.T) {
 	p := NewMessageProducer(producerConfigMock)
 	msg, err := p.ConnectivityCheck()
 
-	assert.EqualError(t, err, "Topic was not found", "It should return an error")
+	assert.EqualError(t, err, "Topic \"methode-articles\" was not found", "It should return an error")
 	assert.Equal(t, "Error connecting to producer proxy", msg, `The check message should be "Error connecting to consumer proxy"`)
 }
 
