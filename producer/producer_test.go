@@ -38,7 +38,7 @@ X-Request-Id: SYNTHETIC-REQ-MON_A391MMaVMv
 
 	for _, test := range tests {
 		resultingMessage := buildMessage(test.message)
-		if resultingMessage != strings.Replace(test.builtMessage, "\n", CRLF, len(test.builtMessage)) {
+		if resultingMessage != strings.Replace(test.builtMessage, "\n", crlf, len(test.builtMessage)) {
 			t.Errorf("Expected: msgs: %v\nActual: msgs: %v.",
 				test.builtMessage, resultingMessage)
 		}
@@ -133,9 +133,9 @@ func TestConstructRequest(t *testing.T) {
 		} else if !containsMessage(request.Body, test.message) {
 			t.Errorf("Expected: message: %v, \nActual: message: %v.",
 				test.expectedRequestURL, request.URL)
-		} else if request.Header.Get("Content-Type") != CONTENT_TYPE_HEADER {
+		} else if request.Header.Get("Content-Type") != contentTypeHeader {
 			t.Errorf("Expected: Content-Type: %v\nActual: Content-Type: %v.",
-				CONTENT_TYPE_HEADER, request.Header.Get("Content-Type"))
+				contentTypeHeader, request.Header.Get("Content-Type"))
 		} else if err != test.expectedError && err.Error() != test.expectedError.Error() {
 			t.Errorf("Expected: error: %v\nActual: error: %v.",
 				test.expectedError, err)
