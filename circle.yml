@@ -7,7 +7,7 @@ dependencies:
 test:
   override:
     - mkdir -p $CIRCLE_TEST_REPORTS/golang
-    - go test -race -v | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml
+    - go test -race -v ./producer | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml
     - go test -v -cover -race -coverprofile=$CIRCLE_ARTIFACTS/overall-coverage.result ./producer
   post:
-    - bash <(curl -s https://codecov.io/bash) 
+    - bash <(curl -s https://codecov.io/bash)
