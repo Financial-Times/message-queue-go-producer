@@ -7,26 +7,39 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"sort"
 	"strings"
 	"time"
 )
 
-const CONTENT_TYPE_HEADER = "application/vnd.kafka.binary.v1+json"
-const CRLF = "\r\n"
+const contentTypeHeader = "application/vnd.kafka.binary.v1+json"
+const crlf = "\r\n"
 
-//Interface for message producer - which writes to kafka through the proxy
+// MessageProducer defines the interface for message producer - which writes
+// to kafka through the proxy
+//
+// SendMessage implements the logic to sending a Message to a queue.
+// The input string should be the UUID that identifies the message.
+// An error should be returned in case of failure in sending a message.
+//
+// ConnectivityCheck implements the logic to check the current
+// connectivity to the queue.
+// The method should return a message about the status of the connection and
+// an error in case of connectivity failure.
 type MessageProducer interface {
 	SendMessage(string, Message) error
+	ConnectivityCheck() (string, error)
 }
 
+// DefaultMessageProducer defines default implementation of a message producer
 type DefaultMessageProducer struct {
 	config MessageProducerConfig
 	client *http.Client
 }
 
-//Configuration for message producer
+// MessageProducerConfig specifies the configuration for message producer
 type MessageProducerConfig struct {
 	//proxy address
 	Addr          string `json:"address"`
@@ -34,18 +47,18 @@ type MessageProducerConfig struct {
 	Authorization string `json:"authorization"`
 }
 
-//Message is the higher-level representation of messages from the queue: containing headers and message body
+// Message is the higher-level representation of messages from the queue: containing headers and message body
 type Message struct {
 	Headers map[string]string
 	Body    string
 }
 
-//Message format required by Kafka-Proxy containing all the Messages
+// MessageWithRecords is a message format required by Kafka-Proxy containing all the Messages
 type MessageWithRecords struct {
 	Records []MessageRecord `json:"records"`
 }
 
-//Message format required by Kafka-Proxy
+// MessageRecord is a Message format required by Kafka-Proxy
 type MessageRecord struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
@@ -65,6 +78,7 @@ func NewMessageProducerWithHTTPClient(config MessageProducerConfig, httpClient *
 	return &DefaultMessageProducer{config, httpClient}
 }
 
+// SendMessage is the producer method that takes care of sending a message on the queue
 func (p *DefaultMessageProducer) SendMessage(uuid string, message Message) (err error) {
 
 	//concatenate message headers with message body to form a proper message string to save
@@ -72,6 +86,7 @@ func (p *DefaultMessageProducer) SendMessage(uuid string, message Message) (err 
 	return p.SendRawMessage(uuid, messageString)
 }
 
+// SendRawMessage is the producer method that takes care of sending a raw message on the queue
 func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (err error) {
 
 	//encode in base64 and envelope the message
@@ -113,7 +128,8 @@ func constructRequest(addr string, topic string, authorizationKey string, messag
 	}
 
 	//set content-type header to json, and host header according to vulcand routing strategy
-	req.Header.Add("Content-Type", CONTENT_TYPE_HEADER)
+
+	req.Header.Add("Content-Type", contentTypeHeader)
 
 	if len(authorizationKey) > 0 {
 		req.Header.Add("Authorization", authorizationKey)
@@ -124,7 +140,7 @@ func constructRequest(addr string, topic string, authorizationKey string, messag
 
 func buildMessage(message Message) string {
 
-	builtMessage := "FTMSG/1.0" + CRLF
+	builtMessage := "FTMSG/1.0" + crlf
 
 	var keys []string
 
@@ -136,10 +152,10 @@ func buildMessage(message Message) string {
 
 	//set headers
 	for _, key := range keys {
-		builtMessage = builtMessage + key + ": " + message.Headers[key] + CRLF
+		builtMessage = builtMessage + key + ": " + message.Headers[key] + crlf
 	}
 
-	builtMessage = builtMessage + CRLF + message.Body
+	builtMessage = builtMessage + crlf + message.Body
 
 	return builtMessage
 
@@ -165,4 +181,56 @@ func envelopeMessage(key string, message string) (string, error) {
 	}
 
 	return string(jsonRecords), err
+}
+
+// ConnectivityCheck verifies if the kakfa proxy is availabe
+func (p *DefaultMessageProducer) ConnectivityCheck() (string, error) {
+	err := p.checkMessageQueueProxyReachable()
+	if err == nil {
+		return "Connectivity to producer proxy is OK.", nil
+	}
+	log.Printf("ERROR - Producer Connectivity Check - %s", err)
+	return "Error connecting to producer proxy", err
+}
+
+func (p *DefaultMessageProducer) checkMessageQueueProxyReachable() error {
+	req, err := http.NewRequest("GET", p.config.Addr+"/topics", nil)
+	if err != nil {
+		return fmt.Errorf("Could not connect to proxy: %v", err.Error())
+	}
+
+	if len(p.config.Authorization) > 0 {
+		req.Header.Add("Authorization", p.config.Authorization)
+	}
+
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Could not connect to proxy: %v", err.Error())
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		errMsg := fmt.Sprintf("Producer proxy returned status: %d", resp.StatusCode)
+		return errors.New(errMsg)
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	return checkIfTopicIsPresent(body, p.config.Topic)
+}
+
+func checkIfTopicIsPresent(body []byte, searchedTopic string) error {
+	var topics []string
+
+	err := json.Unmarshal(body, &topics)
+	if err != nil {
+		return fmt.Errorf("Error occurred and topic could not be found. %v", err.Error())
+	}
+
+	for _, topic := range topics {
+		if topic == searchedTopic {
+			return nil
+		}
+	}
+
+	return fmt.Errorf(`Topic "%v" was not found`, searchedTopic)
 }
