@@ -12,7 +12,6 @@ const mockedTopics = `["methode-articles","up-placholders"]`
 
 var producerConfigMock = MessageProducerConfig{
 	Topic:         "methode-articles",
-	Queue:         "host",
 	Authorization: "my-first-auth-key",
 }
 
