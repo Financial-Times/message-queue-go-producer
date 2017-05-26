@@ -183,7 +183,7 @@ func envelopeMessage(key string, message string) (string, error) {
 	return string(jsonRecords), err
 }
 
-// ConnectivityCheck verifies if the kakfa proxy is availabe
+// ConnectivityCheck verifies if the kafka proxy is available
 func (p *DefaultMessageProducer) ConnectivityCheck() (string, error) {
 	err := p.checkMessageQueueProxyReachable()
 	if err == nil {
@@ -207,30 +207,23 @@ func (p *DefaultMessageProducer) checkMessageQueueProxyReachable() error {
 	if err != nil {
 		return fmt.Errorf("Could not connect to proxy: %v", err.Error())
 	}
+	defer cleanUp(resp)
 
-	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		errMsg := fmt.Sprintf("Producer proxy returned status: %d", resp.StatusCode)
 		return errors.New(errMsg)
 	}
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	return checkIfTopicIsPresent(body, p.config.Topic)
+	return nil
 }
 
-func checkIfTopicIsPresent(body []byte, searchedTopic string) error {
-	var topics []string
-
-	err := json.Unmarshal(body, &topics)
+func cleanUp(resp *http.Response) {
+	_, err := io.Copy(ioutil.Discard, resp.Body)
 	if err != nil {
-		return fmt.Errorf("Error occurred and topic could not be found. %v", err.Error())
+		log.Printf("WARN - %s", err.Error())
 	}
 
-	for _, topic := range topics {
-		if topic == searchedTopic {
-			return nil
-		}
+	err = resp.Body.Close()
+	if err != nil {
+		log.Printf("WARN - %s", err.Error())
 	}
-
-	return fmt.Errorf(`Topic "%v" was not found`, searchedTopic)
 }
