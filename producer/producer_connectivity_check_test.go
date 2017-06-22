@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const mockedTopics = `["methode-articles","up-placholders"]`
+const mockedTopics = `["methode-articles","up-placeholders"]`
 
 var producerConfigMock = MessageProducerConfig{
 	Topic:         "methode-articles",
@@ -53,21 +53,8 @@ func TestConnectivityCheckUnhappyKakfka(t *testing.T) {
 	assert.Equal(t, "Error connecting to producer proxy", msg, `The check message should be "Error connecting to producer proxy"`)
 }
 
-func TestConnectivityCheckMissingTopic(t *testing.T) {
-	proxy := setupMockKafka(t, 200, `["none-of-your-business"]`)
-	defer proxy.Close()
-
-	producerConfigMock.Addr = proxy.URL
-	p := NewMessageProducer(producerConfigMock)
-	msg, err := p.ConnectivityCheck()
-
-	assert.EqualError(t, err, "Topic \"methode-articles\" was not found", "It should return an error")
-	assert.Equal(t, "Error connecting to producer proxy", msg, `The check message should be "Error connecting to consumer proxy"`)
-}
-
 func TestConnectivityCheckNoKafkaProxy(t *testing.T) {
-
-	producerConfigMock.Addr = "http://a-porxy-that-does-not-exist.com"
+	producerConfigMock.Addr = "http://a-proxy-that-does-not-exist.com"
 	p := NewMessageProducer(producerConfigMock)
 	msg, err := p.ConnectivityCheck()
 

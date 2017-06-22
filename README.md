@@ -1,7 +1,7 @@
 # Kafka Proxy producer library
 
 [![GoDoc](https://godoc.org/github.com/Financial-Times/message-queue-go-producer/producer?status.svg)](https://godoc.org/github.com/Financial-Times/message-queue-go-producer/producer)
-[![Circle CI](https://circleci.com/gh/Financial-Times/message-queue-go-producer.svg?style=shield)](https://circleci.com/gh/Financial-Times/message-queue-go-producer/tree/master) [![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/message-queue-go-producer)](https://goreportcard.com/report/github.com/Financial-Times/message-queue-go-producer)  [![codecov](https://codecov.io/gh/Financial-Times/message-queue-go-producer/branch/master/graph/badge.svg)](https://codecov.io/gh/Financial-Times/message-queue-go-producer)
+[![Circle CI](https://circleci.com/gh/Financial-Times/message-queue-go-producer.svg?style=shield)](https://circleci.com/gh/Financial-Times/message-queue-go-producer/tree/master) [![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/message-queue-go-producer)](https://goreportcard.com/report/github.com/Financial-Times/message-queue-go-producer) [![Coverage Status](https://coveralls.io/repos/github/Financial-Times/message-queue-go-producer/badge.svg)](https://coveralls.io/github/Financial-Times/message-queue-go-producer)
 
 
 Responsible for writing messages to kafka, through the kafka proxy
