@@ -85,7 +85,6 @@ func TestConstructRequest(t *testing.T) {
 	var tests = []struct {
 		addr               string
 		topic              string
-		queue              string
 		authorizationKey   string
 		message            string
 		expectedRequestURL string
@@ -94,7 +93,6 @@ func TestConstructRequest(t *testing.T) {
 		{
 			"https://localhost:8080",
 			"test",
-			"kafka-proxy",
 			"Basic Y29jbzpjMGMwcGxhjhjhkhm0=",
 			"simple message",
 			"https://localhost:8080/topics/test",
@@ -103,7 +101,6 @@ func TestConstructRequest(t *testing.T) {
 		{
 			"https://localhost:8080",
 			"test",
-			"kafka-proxy",
 			"",
 			`FTMSG/1.0
 			Message-Id: c4b96810-03e8-4057-84c5-dcc3a8c61a26
@@ -120,13 +117,10 @@ func TestConstructRequest(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		request, err := constructRequest(test.addr, test.topic, test.queue, test.authorizationKey, test.message)
+		request, err := constructRequest(test.addr, test.topic, test.authorizationKey, test.message)
 		if request.URL.String() != test.expectedRequestURL {
 			t.Errorf("Expected: url: %v, \nActual: url: %v.",
 				test.expectedRequestURL, request.URL)
-		} else if request.Host != test.queue && len(test.queue) > 0 {
-			t.Errorf("Expected: host: %v, \nActual: host: %v.",
-				test.queue, request.Host)
 		} else if request.Header.Get("Authorization") != test.authorizationKey {
 			t.Errorf("Expected: authorization: %v, \nActual: authorization: %v.",
 				test.authorizationKey, request.Header.Get("Authorization"))
