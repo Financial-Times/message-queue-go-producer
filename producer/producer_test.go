@@ -73,7 +73,7 @@ func TestEnvelopeMessage(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		resultingMessage, err := envelopeMessage(test.key, test.message)
+		resultingMessage, err := envelopeMessage(test.key, test.message, NewEncoder(Base64E))
 		if resultingMessage != test.envelopedMessage || (err != test.err && err.Error() != test.err.Error()) {
 			t.Errorf("Expected: msgs: %v, error: %v\nActual: msgs: %v, error: %v.",
 				test.envelopedMessage, test.err, resultingMessage, err)

@@ -37,6 +37,7 @@ type MessageProducer interface {
 type DefaultMessageProducer struct {
 	config MessageProducerConfig
 	client *http.Client
+	encoder Encoder
 }
 
 // MessageProducerConfig specifies the configuration for message producer
@@ -64,7 +65,16 @@ type MessageWithRecords struct {
 // MessageRecord is a Message format required by Kafka-Proxy
 type MessageRecord struct {
 	Key   string `json:"key"`
-	Value string `json:"value"`
+	Value interface{} `json:"value"`
+}
+
+// NewMessageProducerWithEncoder returns a producer instance with an specific encoder
+func NewMessageProducerWithEncoder(config MessageProducerConfig, encoder Encoder) MessageProducer {
+	return NewMessageProducerWithHTTPClient(config, &http.Client{
+		Timeout: 60 * time.Second,
+		Transport: &http.Transport{
+			MaxIdleConnsPerHost: 100,
+		}}, encoder)
 }
 
 // NewMessageProducer returns a producer instance
@@ -73,12 +83,12 @@ func NewMessageProducer(config MessageProducerConfig) MessageProducer {
 		Timeout: 60 * time.Second,
 		Transport: &http.Transport{
 			MaxIdleConnsPerHost: 100,
-		}})
+		}}, NewEncoder(Base64E))
 }
 
 // NewMessageProducerWithHTTPClient returns a producer instance with specified http client instance
-func NewMessageProducerWithHTTPClient(config MessageProducerConfig, httpClient *http.Client) MessageProducer {
-	return &DefaultMessageProducer{config, httpClient}
+func NewMessageProducerWithHTTPClient(config MessageProducerConfig, httpClient *http.Client, encoder Encoder) MessageProducer {
+	return &DefaultMessageProducer{config, httpClient, encoder}
 }
 
 // SendMessage is the producer method that takes care of sending a message on the queue
@@ -93,7 +103,7 @@ func (p *DefaultMessageProducer) SendMessage(uuid string, message Message) (err 
 func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (err error) {
 
 	//encode in base64 and envelope the message
-	envelopedMessage, err := envelopeMessage(uuid, message)
+	envelopedMessage, err := envelopeMessage(uuid, message, p.encoder)
 	if err != nil {
 		return
 	}
@@ -166,16 +176,19 @@ func buildMessage(message Message) string {
 
 }
 
-func envelopeMessage(key string, message string) (string, error) {
+func envelopeMessage(key string, message string, encoder Encoder) (string, error) {
 
 	var key64 string
 	if key != "" {
 		key64 = base64.StdEncoding.EncodeToString([]byte(key))
 	}
 
-	message64 := base64.StdEncoding.EncodeToString([]byte(message))
-
-	record := MessageRecord{Key: key64, Value: message64}
+	var data interface{}
+	var err error
+	if data, err = encoder.Encode([]byte(message)); err != nil {
+		return "", err
+	}
+	record := MessageRecord{Key: key64, Value: data}
 	msgWithRecords := &MessageWithRecords{Records: []MessageRecord{record}}
 
 	jsonRecords, err := json.Marshal(msgWithRecords)
