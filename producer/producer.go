@@ -1,7 +1,6 @@
 package producer
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,13 +8,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"sort"
 	"strings"
 	"time"
 )
-
-const contentTypeHeader = "application/vnd.kafka.binary.v1+json"
-const crlf = "\r\n"
 
 // MessageProducer defines the interface for message producer - which writes
 // to kafka through the proxy
@@ -93,14 +88,12 @@ func NewMessageProducerWithHTTPClient(config MessageProducerConfig, httpClient *
 
 // SendMessage is the producer method that takes care of sending a message on the queue
 func (p *DefaultMessageProducer) SendMessage(uuid string, message Message) (err error) {
-
-	//concatenate message headers with message body to form a proper message string to save
-	messageString := buildMessage(message)
-	return p.SendRawMessage(uuid, messageString)
+	messageString := p.encoder.BuildMessage(message)
+	return p.SendRawMessage(uuid, messageString, p.encoder.ContentType())
 }
 
 // SendRawMessage is the producer method that takes care of sending a raw message on the queue
-func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (err error) {
+func (p *DefaultMessageProducer) SendRawMessage(uuid string, message, contentTypeHeader string) (err error) {
 
 	//encode in base64 and envelope the message
 	envelopedMessage, err := envelopeMessage(uuid, message, p.encoder)
@@ -109,7 +102,7 @@ func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (er
 	}
 
 	//create request
-	req, err := constructRequest(p.config.Addr, p.config.Topic, p.config.Queue, p.config.Authorization, envelopedMessage)
+	req, err := constructRequest(p.config.Addr, p.config.Topic, p.config.Queue, p.config.Authorization, envelopedMessage, contentTypeHeader)
 
 	//make request
 	resp, err := p.client.Do(req)
@@ -132,7 +125,7 @@ func (p *DefaultMessageProducer) SendRawMessage(uuid string, message string) (er
 	return nil
 }
 
-func constructRequest(addr string, topic string, queue string, authorizationKey string, message string) (*http.Request, error) {
+func constructRequest(addr string, topic string, queue string, authorizationKey string, message, contentTypeHeader string) (*http.Request, error) {
 
 	req, err := http.NewRequest("POST", addr+"/topics/"+topic, strings.NewReader(message))
 	if err != nil {
@@ -153,34 +146,13 @@ func constructRequest(addr string, topic string, queue string, authorizationKey 
 	return req, err
 }
 
-func buildMessage(message Message) string {
-
-	builtMessage := "FTMSG/1.0" + crlf
-
-	var keys []string
-
-	//order headers
-	for header := range message.Headers {
-		keys = append(keys, header)
-	}
-	sort.Strings(keys)
-
-	//set headers
-	for _, key := range keys {
-		builtMessage = builtMessage + key + ": " + message.Headers[key] + crlf
-	}
-
-	builtMessage = builtMessage + crlf + message.Body
-
-	return builtMessage
-
-}
-
 func envelopeMessage(key string, message string, encoder Encoder) (string, error) {
 
-	var key64 string
 	if key != "" {
-		key64 = base64.StdEncoding.EncodeToString([]byte(key))
+		var err error
+		if key, err = encoder.EncodeKey([]byte(key)); err != nil {
+			return "", err
+		}
 	}
 
 	var data interface{}
@@ -188,7 +160,7 @@ func envelopeMessage(key string, message string, encoder Encoder) (string, error
 	if data, err = encoder.Encode([]byte(message)); err != nil {
 		return "", err
 	}
-	record := MessageRecord{Key: key64, Value: data}
+	record := MessageRecord{Key: key, Value: data}
 	msgWithRecords := &MessageWithRecords{Records: []MessageRecord{record}}
 
 	jsonRecords, err := json.Marshal(msgWithRecords)
