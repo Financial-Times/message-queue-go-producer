@@ -37,7 +37,7 @@ X-Request-Id: SYNTHETIC-REQ-MON_A391MMaVMv
 	}
 
 	for _, test := range tests {
-		resultingMessage := buildMessage(test.message)
+		resultingMessage := NewEncoder(Base64E).BuildMessage(test.message)
 		if resultingMessage != strings.Replace(test.builtMessage, "\n", crlf, len(test.builtMessage)) {
 			t.Errorf("Expected: msgs: %v\nActual: msgs: %v.",
 				test.builtMessage, resultingMessage)
@@ -73,7 +73,7 @@ func TestEnvelopeMessage(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		resultingMessage, err := envelopeMessage(test.key, test.message)
+		resultingMessage, err := envelopeMessage(test.key, test.message, NewEncoder(Base64E))
 		if resultingMessage != test.envelopedMessage || (err != test.err && err.Error() != test.err.Error()) {
 			t.Errorf("Expected: msgs: %v, error: %v\nActual: msgs: %v, error: %v.",
 				test.envelopedMessage, test.err, resultingMessage, err)
@@ -120,7 +120,7 @@ func TestConstructRequest(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		request, err := constructRequest(test.addr, test.topic, test.queue, test.authorizationKey, test.message)
+		request, err := constructRequest(test.addr, test.topic, test.queue, test.authorizationKey, test.message, NewEncoder(Base64E).ContentType())
 		if request.URL.String() != test.expectedRequestURL {
 			t.Errorf("Expected: url: %v, \nActual: url: %v.",
 				test.expectedRequestURL, request.URL)
@@ -133,9 +133,9 @@ func TestConstructRequest(t *testing.T) {
 		} else if !containsMessage(request.Body, test.message) {
 			t.Errorf("Expected: message: %v, \nActual: message: %v.",
 				test.expectedRequestURL, request.URL)
-		} else if request.Header.Get("Content-Type") != contentTypeHeader {
+		} else if request.Header.Get("Content-Type") != NewEncoder(Base64E).ContentType() {
 			t.Errorf("Expected: Content-Type: %v\nActual: Content-Type: %v.",
-				contentTypeHeader, request.Header.Get("Content-Type"))
+				NewEncoder(Base64E).ContentType(), request.Header.Get("Content-Type"))
 		} else if err != test.expectedError && err.Error() != test.expectedError.Error() {
 			t.Errorf("Expected: error: %v\nActual: error: %v.",
 				test.expectedError, err)
